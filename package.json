@@ -1,0 +1,24 @@
+{
+  "name": "hyper-queue",
+  "version": "1.0.0",
+  "description": "hyper wrapper for amqplib",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cloudoki/hyper-queue.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Cloudoki/hyper-queue/issues"
+  },
+  "homepage": "https://github.com/Cloudoki/hyper-queue#readme",
+  "dependencies": {
+    "amqplib": "^0.5.1",
+    "bunyan": "^1.8.10",
+    "node-uuid": "^1.4.8"
+  }
+}
