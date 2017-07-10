@@ -257,7 +257,7 @@ exports.logger = function (logger) {
     log = logger;
 }
 
-exports.consumers = function (confs) {
+exports.registerCconsumers = function (confs) {
 
     if (!confs) {
         bail(new Error('consumers expects an array of objects'));
@@ -269,7 +269,7 @@ exports.consumers = function (confs) {
         return
     }
 
-    consumerConfigurations = confs;
+    consumerConfigurations.push(...confs);
 
 };
 
