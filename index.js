@@ -3,6 +3,7 @@
 const amqp = require('amqplib');
 const bunyan = require('bunyan');
 const uuid = require('node-uuid');
+const fs = require('fs');
 
 let log = null
 
@@ -38,6 +39,8 @@ let bail = function (err) {
         connection.close(function () {
             process.exit(1);
         });
+    } else {
+        process.exit(1);
     }
 }
 
@@ -241,15 +244,51 @@ let consume = function (consumerConf) {
 //begging of public methods
 exports = module.exports = {};
 
-exports.broker = function (addr, sockOpt) {
+exports.broker = function (addr, sockOpt, reconnTimeout) {
 
     if (!addr) {
-        addr = 'amqp://localhost';
+        addr = 'amqps://localhost';
     }
+
+    if (!sockOpt) {
+
+        if (!log) {
+            log = bunyan.createLogger({
+                name: 'hyper-queue'
+            });
+        }
+
+        bail(new Error('TLS configurations are required for connection.'));
+        return
+    }
+
+    if (reconnTimeout) {
+        if (reconnTimeout !== parseInt(reconnTimeout, 10)) {
+
+            if (!log) {
+                log = bunyan.createLogger({
+                    name: 'hyper-queue'
+                });
+            }
+
+            bail(new Error('Reconnection time must be an integer.'));
+            return
+
+        }
+
+        reconnectTime = reconnTimeout;
+    }
+
+    let so = {
+        cert: fs.readFileSync(sockOpt.cert),
+        key: fs.readFileSync(sockOpt.key),
+        passphrase: sockOpt.passphrase,
+        ca: [fs.readFileSync(sockOpt.ca)]
+    };
 
     brokerAddr = addr;
 
-    socketOptions = sockOpt;
+    socketOptions = so;
 
 };
 
