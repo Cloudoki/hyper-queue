@@ -2,10 +2,11 @@
 
 const amqp = require('amqplib');
 const bunyan = require('bunyan');
-const uuid = require('node-uuid');
 const fs = require('fs');
+const uuid = require('node-uuid');
 
-let log = null
+//bunyan logger
+let log = null;
 
 // queue address and port
 let brokerAddr = '';
@@ -13,6 +14,7 @@ let brokerAddr = '';
 //socket options
 let socketOptions = null;
 
+//Time in ms to try to reconnect
 let reconnectTime = 2000;
 
 // control variable used to register SIGINT event listener
@@ -32,11 +34,11 @@ let channel = null;
 let consumerConfigurations = [];
 
 // called on fatal error, will ternimate execution
-let bail = function (err) {
+let bail = (err) => {
     log.error(err);
 
     if (connection) {
-        connection.close(function () {
+        connection.close(() => {
             process.exit(1);
         });
     } else {
@@ -45,7 +47,7 @@ let bail = function (err) {
 }
 
 // open new conection to queue
-let mqConnect = function () {
+let mqConnect = () => {
 
     log.info('connecting to queue...');
 
@@ -65,13 +67,13 @@ let mqConnect = function () {
         connection = conn;
 
         // register event to log connection errors
-        conn.on('error', function (err) {
+        conn.on('error', (err) => {
             log.error(`connection error: ${err}`);
         });
 
         // register event on connection close. In case of error, connection close is
         // also called so there is no need to try to reconnect on error event.
-        conn.on('close', function () {
+        conn.on('close', () => {
             log.info(`connection closed`);
 
             // Only try to reconnect if the user didn't send SIGINT
@@ -90,11 +92,11 @@ let mqConnect = function () {
 
         channel = ch;
 
-        channel.on('error', function (err) {
+        channel.on('error', (err) => {
             log.error(`channel error: ${err}`);
         });
 
-        channel.on('close', function () {
+        channel.on('close', () => {
             log.info(`channel closed`);
         });
 
@@ -110,7 +112,7 @@ let mqConnect = function () {
 
 }
 
-let replyToQueue = function (msg, retMsg) {
+let replyToQueue = (msg, retMsg) => {
     channel.sendToQueue(msg.properties.replyTo,
         Buffer.from(retMsg), {
             correlationId: msg.properties.correlationId
@@ -118,7 +120,7 @@ let replyToQueue = function (msg, retMsg) {
     channel.ack(msg);
 }
 
-let consume = function (consumerConf) {
+let consume = (consumerConf) => {
 
     if (!typeof consumerConf === 'object') {
         bail(new Error('consume paramater must be an object'));
@@ -209,7 +211,7 @@ let consume = function (consumerConf) {
             });
 
         } catch (err) {
-            log.error(err)
+            log.error(err);
             replyToQueue(msg, JSON.stringify({
                 error: err
             }));
@@ -234,7 +236,7 @@ let consume = function (consumerConf) {
     }
 
     return ok.then(() => {
-        log.debug('consumer added')
+        log.debug('consumer added');
     }).catch((err) => {
         log.error(err);
     });
@@ -244,7 +246,7 @@ let consume = function (consumerConf) {
 //begging of public methods
 exports = module.exports = {};
 
-exports.broker = function (addr, sockOpt, reconnTimeout) {
+exports.broker = (addr, sockOpt, reconnTimeout) => {
 
     if (!addr) {
         addr = 'amqps://localhost';
@@ -292,11 +294,11 @@ exports.broker = function (addr, sockOpt, reconnTimeout) {
 
 };
 
-exports.logger = function (logger) {
+exports.logger = (logger) => {
     log = logger;
 }
 
-exports.registerConsumers = function (confs) {
+exports.registerConsumers = (confs) => {
 
     if (!confs) {
         bail(new Error('consumers expects an array of objects'));
@@ -312,7 +314,7 @@ exports.registerConsumers = function (confs) {
 
 };
 
-exports.sendSync = function (queue, sendObj) {
+exports.sendSync = (queue, sendObj) => {
 
     let p = new Promise;
 
@@ -337,20 +339,20 @@ exports.sendSync = function (queue, sendObj) {
     let ok = ch.assertQueue('', {
             exclusive: true
         })
-        .then(function (qok) {
+        .then((qok) => {
             return qok.queue;
         });
 
-    ok = ok.then(function (replyQueue) {
+    ok = ok.then((replyQueue) => {
         return ch.consume(replyQueue, maybeAnswer, {
                 noAck: true
             })
-            .then(function () {
+            .then(() => {
                 return replyQueue;
             });
     });
 
-    ok = ok.then(function (replyQueue) {
+    ok = ok.then((replyQueue) => {
 
         try {
 
@@ -369,7 +371,7 @@ exports.sendSync = function (queue, sendObj) {
 
 };
 
-exports.sendAsync = function (queue, sendObj) {
+exports.sendAsync = (queue, sendObj) => {
 
     try {
         let sendStr = JSON.stringify(sendObj);
@@ -377,12 +379,12 @@ exports.sendAsync = function (queue, sendObj) {
         channel.sendToQueue(queue, Buffer.from(sendStr));
 
     } catch (err) {
-        log.error(err)
+        log.error(err);
     }
 
 };
 
-exports.connect = function () {
+exports.connect = () => {
 
     if (!log) {
         log = bunyan.createLogger({
