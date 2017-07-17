@@ -316,7 +316,7 @@ exports.registerConsumers = (confs) => {
 
 exports.sendSync = (queue, sendObj) => {
 
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
 
         let corrId = uuid();
 
