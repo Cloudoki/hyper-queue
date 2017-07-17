@@ -336,7 +336,7 @@ exports.sendSync = (queue, sendObj) => {
             }
         }
 
-        let ok = ch.assertQueue('', {
+        let ok = channel.assertQueue('', {
                 exclusive: true
             })
             .then((qok) => {
@@ -344,7 +344,7 @@ exports.sendSync = (queue, sendObj) => {
             });
 
         ok = ok.then((replyQueue) => {
-            return ch.consume(replyQueue, maybeAnswer, {
+            return channel.consume(replyQueue, maybeAnswer, {
                     noAck: true
                 })
                 .then(() => {
