@@ -38,6 +38,7 @@ let bail = (err) => {
     log.error(err);
 
     if (connection) {
+        exit = true;
         connection.close(() => {
             process.exit(1);
         });
@@ -59,6 +60,7 @@ let mqConnect = () => {
             registered = true;
             // register event to clone connection on interrupt signal
             process.once('SIGINT', () => {
+                log.debug('exting...')
                 exit = true;
                 conn.close();
             });
@@ -79,6 +81,8 @@ let mqConnect = () => {
             // Only try to reconnect if the user didn't send SIGINT
             if (!exit) {
                 mqConnect();
+            } else {
+                process.exit(0);
             }
         });
 
@@ -329,8 +333,9 @@ exports.sendSync = (queue, sendObj) => {
 
                     resolve(obj);
 
-                } catch (e) {
-                    reject(e);
+                } catch (err) {
+                    log.error(err);
+                    reject(err);
                 }
 
             }
@@ -363,8 +368,9 @@ exports.sendSync = (queue, sendObj) => {
                     replyTo: replyQueue
                 });
 
-            } catch (e) {
-                reject(e);
+            } catch (err) {
+                log.error(err);
+                reject(err);
             }
 
         });
