@@ -316,56 +316,59 @@ exports.registerConsumers = (confs) => {
 
 exports.sendSync = (queue, sendObj) => {
 
-    let p = new Promise;
+    new Promise((resolve, reject) => {
 
-    let corrId = uuid();
+        let corrId = uuid();
 
-    function maybeAnswer(msg) {
-        if (msg.properties.correlationId === corrId) {
+        function maybeAnswer(msg) {
+            if (msg.properties.correlationId === corrId) {
+
+                try {
+
+                    let obj = JSON.parse(msg.content.toString());
+
+                    resolve(obj);
+
+                } catch (e) {
+                    reject(e);
+                }
+
+            }
+        }
+
+        let ok = ch.assertQueue('', {
+                exclusive: true
+            })
+            .then((qok) => {
+                return qok.queue;
+            });
+
+        ok = ok.then((replyQueue) => {
+            return ch.consume(replyQueue, maybeAnswer, {
+                    noAck: true
+                })
+                .then(() => {
+                    return replyQueue;
+                });
+        });
+
+        ok = ok.then((replyQueue) => {
 
             try {
 
-                let obj = JSON.parse(msg.content.toString());
+                let objStr = JSON.stringify(sendObj);
 
-                p.resolve(obj);
+                channel.sendToQueue(queue, Buffer.from(objStr), {
+                    correlationId: corrId,
+                    replyTo: replyQueue
+                });
 
             } catch (e) {
-                p.reject(e);
+                reject(e);
             }
 
-        }
-    }
-
-    let ok = ch.assertQueue('', {
-            exclusive: true
-        })
-        .then((qok) => {
-            return qok.queue;
         });
 
-    ok = ok.then((replyQueue) => {
-        return ch.consume(replyQueue, maybeAnswer, {
-                noAck: true
-            })
-            .then(() => {
-                return replyQueue;
-            });
-    });
-
-    ok = ok.then((replyQueue) => {
-
-        try {
-
-            let objStr = JSON.stringify(sendObj);
-
-            channel.sendToQueue(queue, Buffer.from(objStr), {
-                correlationId: corrId,
-                replyTo: replyQueue
-            });
-
-        } catch (e) {
-            p.reject(e);
-        }
 
     });
 
